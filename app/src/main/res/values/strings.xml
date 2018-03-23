@@ -6,4 +6,10 @@
     <string name="settings_label">Settings</string>
     <string name="enable_geofences">Enable Geofences</string>
     <string name="location_permissions">Grant Location Permissions</string>
+    <string name="access_required">Please provide app access to GPS location</string>
+    <string name="access_unavailable">Access to GPS not available. Did you allow app to access GPS?</string>
+    <string name="permission_granted">Permission to access GPS granted</string>
+    <string name="permission_denied">Permission to access GPS denied</string>
+    <string name="play_services_unavailable">This app cannot run without google play services</string>
+    <string name="install_gms">You need to install Google Play Services to continue using this app</string>
 </resources>
