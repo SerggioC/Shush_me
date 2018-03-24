@@ -23,17 +23,29 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.android.gms.location.places.PlaceBuffer;
+import com.google.android.gms.maps.model.LatLng;
+
 public class PlaceListAdapter extends RecyclerView.Adapter<PlaceListAdapter.PlaceViewHolder> {
 
     private Context mContext;
+    private PlaceBuffer placeBufer;
+
+    public void swapData(PlaceBuffer placeBufer) {
+        this.placeBufer = placeBufer;
+        if (placeBufer != null) {
+            this.notifyDataSetChanged();
+        }
+    }
 
     /**
      * Constructor using the context and the db cursor
      *
      * @param context the calling context/activity
      */
-    public PlaceListAdapter(Context context) {
+    public PlaceListAdapter(Context context, PlaceBuffer placeBufer) {
         this.mContext = context;
+        this.placeBufer = placeBufer;
     }
 
     /**
@@ -59,7 +71,10 @@ public class PlaceListAdapter extends RecyclerView.Adapter<PlaceListAdapter.Plac
      */
     @Override
     public void onBindViewHolder(PlaceViewHolder holder, int position) {
-
+        holder.nameTextView.setText(placeBufer.get(position).getName());
+        holder.addressTextView.setText(placeBufer.get(position).getAddress());
+        LatLng latLng = placeBufer.get(position).getLatLng();
+        holder.latLonTextView.setText(String.format("Latitude %s, Longitude %s", latLng.latitude, latLng.longitude));
     }
 
 
@@ -70,7 +85,7 @@ public class PlaceListAdapter extends RecyclerView.Adapter<PlaceListAdapter.Plac
      */
     @Override
     public int getItemCount() {
-        return 0;
+        return placeBufer == null || placeBufer.getCount() == 0 ? 0 : placeBufer.getCount();
     }
 
     /**
@@ -80,11 +95,13 @@ public class PlaceListAdapter extends RecyclerView.Adapter<PlaceListAdapter.Plac
 
         TextView nameTextView;
         TextView addressTextView;
+        TextView latLonTextView;
 
         public PlaceViewHolder(View itemView) {
             super(itemView);
-            nameTextView = (TextView) itemView.findViewById(R.id.name_text_view);
-            addressTextView = (TextView) itemView.findViewById(R.id.address_text_view);
+            nameTextView = itemView.findViewById(R.id.name_text_view);
+            addressTextView = itemView.findViewById(R.id.address_text_view);
+            latLonTextView = itemView.findViewById(R.id.lat_lon_text_view);
         }
 
     }
