@@ -14,4 +14,8 @@
     <string name="install_gms">You need to install Google Play Services to continue using this app</string>
     <string name="privacy_link">http://www.google.com/policies/privacy</string>
     <string name="pref_enable_fences_key">fences_enabled_key</string>
+    <string name="ringer_permissions">Grant Ringer Permissions</string>
+    <string name="silent_mode_activated">Silent Mode Activated</string>
+    <string name="back_to_normal">Ringer mode set to normal</string>
+    <string name="touch_to_relaunch">Open app</string>
 </resources>

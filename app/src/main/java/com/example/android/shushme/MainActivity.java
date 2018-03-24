@@ -17,12 +17,14 @@ package com.example.android.shushme;
 */
 
 import android.Manifest;
+import android.app.NotificationManager;
 import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -32,7 +34,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -41,6 +42,7 @@ import android.widget.Switch;
 import android.widget.Toast;
 
 import com.example.android.shushme.provider.PlaceContract;
+import com.example.android.shushme.util.TimberImplementation;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -59,15 +61,15 @@ import com.google.android.gms.location.places.ui.PlacePicker;
 import java.util.ArrayList;
 import java.util.List;
 
+import timber.log.Timber;
+
 public class MainActivity extends AppCompatActivity implements
         ConnectionCallbacks,
         OnConnectionFailedListener {
 
     // Constants
-    public static final String TAG = "Sergio> " + MainActivity.class.getSimpleName();
     private static final int FINE_LOCATION_REQUEST_CODE = 111;
     private static final int PLACE_PICKER_REQUEST = 1;
-    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 30;
 
     // Member variables
     private PlaceListAdapter mAdapter;
@@ -76,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements
     private GoogleApiClient googleApiClient;
     private boolean fencesEnabled;
     private Geofencing geofencing;
+    private CheckBox ringerPermission;
 
     /**
      * Called when the activity is starting
@@ -86,6 +89,8 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        TimberImplementation.init();
 
         // Set up the recycler view
         mRecyclerView = findViewById(R.id.places_list_recycler_view);
@@ -109,6 +114,15 @@ public class MainActivity extends AppCompatActivity implements
                 } else {
                     geofencing.unregisterAllGeofences();
                 }
+            }
+        });
+
+        ringerPermission = findViewById(R.id.ringer_permission_checkbox);
+        ringerPermission.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+                startActivity(intent);
             }
         });
 
@@ -136,7 +150,7 @@ public class MainActivity extends AppCompatActivity implements
      */
     @Override
     public void onConnected(@Nullable Bundle connectionHint) {
-        Log.i(TAG, "API Client Connection Successful!");
+        Timber.i("API Client Connection Successful!");
 
         refreshPlacesData();
     }
@@ -169,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements
      */
     @Override
     public void onConnectionSuspended(int cause) {
-        Log.i(TAG, "API Client Connection Suspended!");
+        Timber.i("API Client Connection Suspended!");
     }
 
     /***
@@ -179,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements
      */
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult result) {
-        Log.e(TAG, "API Client Connection Failed!");
+        Timber.e("API Client Connection Failed!");
     }
 
 
@@ -194,7 +208,7 @@ public class MainActivity extends AppCompatActivity implements
         if (requestCode == PLACE_PICKER_REQUEST && resultCode == RESULT_OK) {
             Place place = PlacePicker.getPlace(this, data);
             if (place == null) {
-                Log.i(TAG, "No place selected");
+                Timber.i("No place selected");
                 return;
             }
 
@@ -241,6 +255,13 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !notificationManager.isNotificationPolicyAccessGranted()) {
+            ringerPermission.setChecked(false);
+        } else {
+            ringerPermission.setChecked(true);
+            ringerPermission.setEnabled(false);
+        }
     }
 
     public void onAddPlaceButtonClicked() {
@@ -256,16 +277,16 @@ public class MainActivity extends AppCompatActivity implements
             Intent intent = builder.build(this);
             startActivityForResult(intent, PLACE_PICKER_REQUEST);
         } catch (GooglePlayServicesRepairableException e) {
-            Log.w(TAG, String.format("GooglePlayServices Not Available [%s]", e.getMessage()));
+            Timber.w(String.format("GooglePlayServices Not Available [%s]", e.getMessage()));
             getPlayServices();
 
         } catch (GooglePlayServicesNotAvailableException e) {
-            Log.e(TAG, String.format("GooglePlayServices Not Available [%s]", e.getMessage()));
+            Timber.e(String.format("GooglePlayServices Not Available [%s]", e.getMessage()));
             Snackbar.make(mainLayout, R.string.play_services_unavailable,
                     Snackbar.LENGTH_INDEFINITE)
                     .show();
         } catch (Exception e) {
-            Log.e(TAG, String.format("PlacePicker Exception: %s", e.getMessage()));
+            Timber.e(String.format("PlacePicker Exception: %s", e.getMessage()));
         }
     }
 
@@ -299,7 +320,6 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == FINE_LOCATION_REQUEST_CODE) {
-            // Request for camera permission.
             if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Snackbar.make(mainLayout, R.string.permission_granted,
                         Snackbar.LENGTH_LONG)
@@ -333,7 +353,7 @@ public class MainActivity extends AppCompatActivity implements
 
             } else {
                 // Play Services not available
-                Log.e(TAG, "This device is not supported.");
+                Timber.e("This device is not supported because it does not have Google Play Services installed.");
                 Snackbar.make(mainLayout, R.string.play_services_unavailable,
                         Snackbar.LENGTH_INDEFINITE)
                         .show();

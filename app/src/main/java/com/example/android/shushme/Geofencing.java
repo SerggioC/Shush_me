@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.util.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.Geofence;
@@ -23,6 +22,8 @@ import com.google.android.gms.tasks.Task;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import timber.log.Timber;
 
 /**
  * Created by Sergio on 24/03/2018.
@@ -52,11 +53,9 @@ public class Geofencing {
 
         /// already called checkSelfPermission...
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // Consider calling
-            //    ActivityCompat#requestPermissions
+            // Consider calling ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
+            // public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
             return;
@@ -68,19 +67,20 @@ public class Geofencing {
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
-                        Log.d("Sergio>", this + " onSuccess ");
+                        Timber.d("onSuccess ");
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.e("Sergio>", " onFailure:\nexception e= " + e);
+                        // GPS enabled?
+                        Timber.e("onFailure:\nexception e= " + e);
                     }
                 })
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
-                        Log.i("Sergio>", this + " onComplete\ntask= " + task);
+                        Timber.i("onComplete\ntask= " + task);
                     }
                 });
 
@@ -97,19 +97,19 @@ public class Geofencing {
         .addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                Log.d("Sergio>", this + " onSuccess removed all geofences");
+                Timber.d(this + " onSuccess removed all geofences");
             }
         })
         .addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Log.e("Sergio>", " onFailure: removing geofences error= " + e);
+                Timber.e(this + " onFailure: removing geofences error= " + e);
             }
         })
         .addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
-                Log.i("Sergio>", this + " onComplete removing geofences");
+                Timber.i(this + " onComplete removing geofences");
             }
         });
     }
@@ -127,7 +127,7 @@ public class Geofencing {
             Geofence geofence = new Geofence.Builder()
                     .setRequestId(placeID)
                     .setCircularRegion(latitude, longitude, FENCE_RADIUS)
-                    .setExpirationDuration(TimeUnit.DAYS.toMillis(30))
+                    .setExpirationDuration(TimeUnit.DAYS.toMillis(2))
                     .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT)
                     .build();
 
@@ -144,9 +144,8 @@ public class Geofencing {
     }
 
     private PendingIntent getGeofencePendingIntent() {
-        if (geofencePendingIntent != null) {
-            return geofencePendingIntent;
-        }
+        if (geofencePendingIntent != null) return geofencePendingIntent;
+
         Intent intent = new Intent(context, GeofenceBroadcastReceiver.class);
         geofencePendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         return geofencePendingIntent;
